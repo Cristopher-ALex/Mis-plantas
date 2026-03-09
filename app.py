@@ -26,14 +26,12 @@ conn.commit()
 def obtener_clima():
     # --- PEGA TU CLAVE AQUÍ ABAJO ---
     API_KEY_PERSONAL = "dd01e978a1371798766bc0ff1f0fa1b0" 
-    
-    # Coordenadas de Comodoro Rivadavia
+        # Coordenadas de Comodoro Rivadavia
     lat, lon = -45.8641, -67.4808 
     
     # URL configurada para Celsius, Km/h y Español
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY_PERSONAL}&units=metric&lang=es"
-    
-    try:
+        try:
         res = requests.get(url, timeout=3).json()
         if res.get("cod") == 200:
             return {
@@ -56,10 +54,8 @@ if clima:
         st.sidebar.error(f"⚠️ VIENTO FUERTE: {viento:.1f} km/h")
     else:
         st.sidebar.info(f"🌬️ Viento: {viento:.1f} km/h")
-
 menu = ["Panel de Control", "Registrar Planta/Especie", "Cámara de Seguimiento", "Biblioteca PDF"]
 choice = st.sidebar.selectbox("Ir a:", menu)
-
 # --- SECCIÓN 1: PANEL DE CONTROL (CON ELIMINACIÓN) ---
 elif choice == "Panel de Control":
     st.header("📋 Mi Colección de Plantas")
@@ -70,35 +66,29 @@ elif choice == "Panel de Control":
         FROM plantas p 
         JOIN especies e ON p.especie_id = e.id
     '''
-    
-    try:
+        try:
         df = pd.read_sql(query, conn)
-        
-        if not df.empty:
+               if not df.empty:
             # Mostramos una tabla linda
             st.dataframe(df, use_container_width=True)
-            
-            # Un buscador rápido por si tienes muchas
+                     # Un buscador rápido por si tienes muchas
             busqueda = st.text_input("🔍 Buscar planta por apodo")
             if busqueda:
                 df = df[df['apodo'].str.contains(busqueda, case=False)]
                 st.write(df)
         else:
             st.info("Aún no tienes plantas registradas. ¡Ve a 'Registrar Planta' para empezar!")
-            
-    except Exception as e:
+                except Exception as e:
         st.error(f"Hubo un problema al cargar los datos: {e}")
 st.divider()
     st.subheader("pulse 📖 Ver historial de una planta")
-    
-    if not df.empty:
+        if not df.empty:
         planta_sel = st.selectbox("Selecciona para ver historial:", df['apodo'].unique())
         
         # Buscamos el ID de esa planta
         p_id_query = f"SELECT id FROM plantas WHERE apodo = '{planta_sel}'"
         p_id = pd.read_sql(p_id_query, conn).iloc[0]['id']
-        
-        # Traemos su historial
+                # Traemos su historial
         historial_df = pd.read_sql(f"SELECT fecha, accion FROM historial WHERE planta_id = {p_id} ORDER BY fecha DESC", conn)
         
         if not historial_df.empty:
@@ -186,6 +176,7 @@ elif choice == "Biblioteca PDF":
         pdf_viewer = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700" type="application/pdf">'
 
         st.markdown(pdf_viewer, unsafe_allow_html=True)
+
 
 
 
