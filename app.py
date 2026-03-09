@@ -60,29 +60,42 @@ if clima:
 menu = ["Panel de Control", "Registrar Planta/Especie", "Cámara de Seguimiento", "Biblioteca PDF"]
 choice = st.sidebar.selectbox("Ir a:", menu)
 
-# --- SECCIÓN 1: PANEL DE CONTROL ---
+# --- SECCIÓN 1: PANEL DE CONTROL (CON ELIMINACIÓN) ---
 if choice == "Panel de Control":
     st.header("📋 Estado de mi Colección")
+    
+    # Traemos los datos actuales
     query = '''
-        SELECT p.id, p.apodo, e.nombre as especie, e.agua, p.salud, p.ubicacion 
+        SELECT p.id, p.apodo, e.nombre as especie, p.ubicacion 
         FROM plantas p JOIN especies e ON p.especie_id = e.id
     '''
     df = pd.read_sql(query, conn)
     
     if not df.empty:
         st.dataframe(df, use_container_width=True)
-        st.subheader("Acciones Rápidas")
+        
+        st.subheader("🗑️ Eliminar o Editar")
         col1, col2 = st.columns(2)
+        
         with col1:
-            planta_id = st.selectbox("Seleccionar planta para regar:", df['id'], format_func=lambda x: df[df['id']==x]['apodo'].values[0])
+            # Selector para elegir qué planta borrar
+            id_a_borrar = st.selectbox("Selecciona la planta que quieres eliminar:", 
+                                        df['id'], 
+                                        format_func=lambda x: df[df['id']==x]['apodo'].values[0])
+        
         with col2:
-            if st.button("Registrar Riego Hoy"):
-                c.execute("INSERT INTO historial (planta_id, fecha, accion) VALUES (?, ?, ?)", 
-                          (planta_id, datetime.now().strftime("%Y-%m-%d %H:%M"), "Riego"))
-                conn.commit()
-                st.success("Riego registrado.")
+            st.write("---") # Espacio visual
+            # Botón de confirmación para evitar borrados por error
+            if st.button("Confirmar: Eliminar Planta"):
+                try:
+                    c.execute("DELETE FROM plantas WHERE id = ?", (id_a_borrar,))
+                    conn.commit()
+                    st.warning(f"Registro {id_a_borrar} eliminado. La página se recargará.")
+                    st.rerun() # Esto refresca la app para que ya no aparezca
+                except Exception as e:
+                    st.error(f"Error al eliminar: {e}")
     else:
-        st.info("Aún no hay plantas registradas. Ve a la sección de Registro.")
+        st.info("No hay registros para mostrar.")
 
 # --- SECCIÓN 2: REGISTRO ---
 elif choice == "Registrar Planta/Especie":
@@ -148,3 +161,4 @@ elif choice == "Biblioteca PDF":
         pdf_viewer = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700" type="application/pdf">'
 
         st.markdown(pdf_viewer, unsafe_allow_html=True)
+
