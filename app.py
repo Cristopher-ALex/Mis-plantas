@@ -121,7 +121,7 @@ elif choice == "Cámara de Seguimiento":
     plantas_df = pd.read_sql("SELECT id, apodo FROM plantas", conn)
     if not plantas_df.empty:
         p_id = st.selectbox("¿A qué planta le tomas la foto?", plantas_df['id'], format_func=lambda x: plantas_df[plantas_df['id']==x]['apodo'].values[0])
-        foto = st.camera_input("Capturar progreso")
+        foto = st.camera_input("Capturar progreso de mi planta")
         if foto:
             st.image(foto)
             st.success("Foto capturada. (Para guardarla permanentemente en disco requiere configuración de archivos adicional).")
@@ -146,4 +146,5 @@ elif choice == "Biblioteca PDF":
         with open(os.path.join("biblioteca", sel_pdf), "rb") as f:
             base64_pdf = base64.b64encode(f.read()).decode('utf-8')
         pdf_viewer = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700" type="application/pdf">'
+
         st.markdown(pdf_viewer, unsafe_allow_html=True)
