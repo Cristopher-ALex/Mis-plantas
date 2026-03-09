@@ -61,41 +61,51 @@ menu = ["Panel de Control", "Registrar Planta/Especie", "Cámara de Seguimiento"
 choice = st.sidebar.selectbox("Ir a:", menu)
 
 # --- SECCIÓN 1: PANEL DE CONTROL (CON ELIMINACIÓN) ---
-if choice == "Panel de Control":
-    st.header("📋 Estado de mi Colección")
+elif choice == "Panel de Control":
+    st.header("📋 Mi Colección de Plantas")
     
-    # Traemos los datos actuales
+    # Consultamos la base de datos
     query = '''
         SELECT p.id, p.apodo, e.nombre as especie, p.ubicacion 
-        FROM plantas p JOIN especies e ON p.especie_id = e.id
+        FROM plantas p 
+        JOIN especies e ON p.especie_id = e.id
     '''
-    df = pd.read_sql(query, conn)
+    
+    try:
+        df = pd.read_sql(query, conn)
+        
+        if not df.empty:
+            # Mostramos una tabla linda
+            st.dataframe(df, use_container_width=True)
+            
+            # Un buscador rápido por si tienes muchas
+            busqueda = st.text_input("🔍 Buscar planta por apodo")
+            if busqueda:
+                df = df[df['apodo'].str.contains(busqueda, case=False)]
+                st.write(df)
+        else:
+            st.info("Aún no tienes plantas registradas. ¡Ve a 'Registrar Planta' para empezar!")
+            
+    except Exception as e:
+        st.error(f"Hubo un problema al cargar los datos: {e}")
+st.divider()
+    st.subheader("pulse 📖 Ver historial de una planta")
     
     if not df.empty:
-        st.dataframe(df, use_container_width=True)
+        planta_sel = st.selectbox("Selecciona para ver historial:", df['apodo'].unique())
         
-        st.subheader("🗑️ Eliminar o Editar")
-        col1, col2 = st.columns(2)
+        # Buscamos el ID de esa planta
+        p_id_query = f"SELECT id FROM plantas WHERE apodo = '{planta_sel}'"
+        p_id = pd.read_sql(p_id_query, conn).iloc[0]['id']
         
-        with col1:
-            # Selector para elegir qué planta borrar
-            id_a_borrar = st.selectbox("Selecciona la planta que quieres eliminar:", 
-                                        df['id'], 
-                                        format_func=lambda x: df[df['id']==x]['apodo'].values[0])
+        # Traemos su historial
+        historial_df = pd.read_sql(f"SELECT fecha, accion FROM historial WHERE planta_id = {p_id} ORDER BY fecha DESC", conn)
         
-        with col2:
-            st.write("---") # Espacio visual
-            # Botón de confirmación para evitar borrados por error
-            if st.button("Confirmar: Eliminar Planta"):
-                try:
-                    c.execute("DELETE FROM plantas WHERE id = ?", (id_a_borrar,))
-                    conn.commit()
-                    st.warning(f"Registro {id_a_borrar} eliminado. La página se recargará.")
-                    st.rerun() # Esto refresca la app para que ya no aparezca
-                except Exception as e:
-                    st.error(f"Error al eliminar: {e}")
-    else:
-        st.info("No hay registros para mostrar.")
+        if not historial_df.empty:
+            for index, row in historial_df.iterrows():
+                st.write(f"**{row['fecha']}**: {row['accion']}")
+        else:
+            st.write("No hay eventos registrados para esta planta.")
 
 # --- SECCIÓN 2: REGISTRO ---
 elif choice == "Registrar Planta/Especie":
@@ -176,6 +186,7 @@ elif choice == "Biblioteca PDF":
         pdf_viewer = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700" type="application/pdf">'
 
         st.markdown(pdf_viewer, unsafe_allow_html=True)
+
 
 
 
