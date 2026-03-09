@@ -98,64 +98,32 @@ st.divider()
             st.write("No hay eventos registrados para esta planta.")
 
 # --- SECCIÓN 2: REGISTRO ---
-elif choice == "Registrar Planta/Especie":
-    st.header("📝 Alta de Ejemplares")
-    colA, colB = st.columns(2)
-    
-    with colA:
-        st.subheader("1. Nueva Especie")
-        nom_e = st.text_input("Nombre (ej: Venus Atrapamoscas)")
-        agua_e = st.selectbox("Tipo de Agua", ["Destilada", "Lluvia", "Grifo"])
-        freq_e = st.number_input("Riego cada (días)", min_value=1, value=3)
-        if st.button("Guardar Especie"):
-            c.execute("INSERT INTO especies (nombre, agua, frecuencia) VALUES (?,?,?)", (nom_e, agua_e, freq_e))
-            conn.commit()
-            st.success("Especie creada.")
-
-    with colB:
-        st.subheader("2. Nueva Planta")
-        esp_df = pd.read_sql("SELECT id, nombre FROM especies", conn)
-        if not esp_df.empty:
-            apodo_p = st.text_input("Apodo (ej: La Cazadora)")
-            esp_p = st.selectbox("Especie", esp_df['id'], format_func=lambda x: esp_df[esp_df['id']==x]['nombre'].values[0])
-            salud_p = st.slider("Salud inicial", 1, 5, 5)
-            ubic_p = st.text_input("Ubicación (ej: Invernadero)")
-            if st.button("Añadir a Colección"):
-                c.execute("INSERT INTO plantas (apodo, especie_id, salud, ubicacion) VALUES (?,?,?,?)", 
-                          (apodo_p, esp_p, salud_p, ubic_p))
-                conn.commit()
-                st.balloons()
-        else:
-            st.warning("Primero debes crear una Especie.")
-
-# --- SECCIÓN 3: CÁMARA ---
-elif choice == "Cámara de Seguimiento":
-    st.header("📸 Registro Visual")
-    
-    # 1. Traer las plantas de la base de datos para el selector
-    plantas_df = pd.read_sql("SELECT id, apodo FROM plantas", conn)
-    
-    if not plantas_df.empty:
-        # Selector de planta
-        p_id = st.selectbox("¿A qué planta pertenece la foto?", 
-                            plantas_df['id'], 
-                            format_func=lambda x: plantas_df[plantas_df['id']==x]['apodo'].values[0])
-        
-        # EL CAMBIO: Usamos file_uploader que es más estable
-        foto = st.file_uploader("Elegir foto o sacar con la cámara", type=['png', 'jpg', 'jpeg'])
-        
-        if foto is not None:
-            st.image(foto, caption="Vista previa de la captura")
+elif choice == "Registrar Planta":
+        st.header("🌱 Nueva Planta en la Colección")
+        with st.form("form_planta"):
+            apodo = st.text_input("Apodo de la planta (Ej: Mi Bonsái)")
+            ubicacion = st.selectbox("Ubicación", ["Interior", "Exterior", "Invernadero"])
+            # Traemos las especies para el selector
+            esp_df = pd.read_sql("SELECT id, nombre FROM especies", conn)
+            esp_id = st.selectbox("Especie", esp_df['id'], format_func=lambda x: esp_df[esp_df['id']==x]['nombre'].values[0])
             
-            if st.button("Confirmar y Guardar Foto"):
-                # Guardamos solo el texto en la base de datos para evitar errores de archivos
-                fecha_hoy = datetime.now().strftime("%Y-%m-%d %H:%M")
-                c.execute("INSERT INTO historial (planta_id, fecha, accion) VALUES (?, ?, ?)", 
-                          (p_id, fecha_hoy, "Nueva foto cargada al registro"))
+            if st.form_submit_button("Añadir a Colección"):
+                c.execute("INSERT INTO plantas (apodo, especie_id, ubicacion) VALUES (?, ?, ?)", 
+                          (apodo, esp_id, ubicacion))
                 conn.commit()
-                st.success(f"✅ Registro actualizado para la planta {p_id}")
-    else:
-        st.warning("Primero debes registrar una planta en el Panel de Control.")
+                st.success(f"¡{apodo} registrada con éxito!")
+
+    elif choice == "Panel de Control":
+        st.header("📋 Mi Colección")
+        try:
+            query = "SELECT p.id, p.apodo, e.nombre as especie, p.ubicacion FROM plantas p JOIN especies e ON p.especie_id = e.id"
+            df = pd.read_sql(query, conn)
+            if not df.empty:
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("No hay plantas aún.")
+        except Exception as e:
+            st.error(f"Error de base de datos: {e}")
 # --- SECCIÓN 4: BIBLIOTECA PDF ---
 elif choice == "Biblioteca PDF":
     st.header("📚 Mis Manuales Técnicos")
@@ -176,6 +144,7 @@ elif choice == "Biblioteca PDF":
         pdf_viewer = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700" type="application/pdf">'
 
         st.markdown(pdf_viewer, unsafe_allow_html=True)
+
 
 
 
