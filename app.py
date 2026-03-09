@@ -131,16 +131,31 @@ elif choice == "Registrar Planta/Especie":
 # --- SECCIÓN 3: CÁMARA ---
 elif choice == "Cámara de Seguimiento":
     st.header("📸 Registro Visual")
+    
+    # 1. Traer las plantas de la base de datos para el selector
     plantas_df = pd.read_sql("SELECT id, apodo FROM plantas", conn)
+    
     if not plantas_df.empty:
-        p_id = st.selectbox("¿A qué planta le tomas la foto?", plantas_df['id'], format_func=lambda x: plantas_df[plantas_df['id']==x]['apodo'].values[0])
-      foto = st.file_uploader("Subir foto de la planta", type=['png', 'jpg', 'jpeg'])
-        if foto:
-            st.image(foto)
-            st.success("Foto capturada. (Para guardarla permanentemente en disco requiere configuración de archivos adicional).")
+        # Selector de planta
+        p_id = st.selectbox("¿A qué planta pertenece la foto?", 
+                            plantas_df['id'], 
+                            format_func=lambda x: plantas_df[plantas_df['id']==x]['apodo'].values[0])
+        
+        # EL CAMBIO: Usamos file_uploader que es más estable
+        foto = st.file_uploader("Elegir foto o sacar con la cámara", type=['png', 'jpg', 'jpeg'])
+        
+        if foto is not None:
+            st.image(foto, caption="Vista previa de la captura")
+            
+            if st.button("Confirmar y Guardar Foto"):
+                # Guardamos solo el texto en la base de datos para evitar errores de archivos
+                fecha_hoy = datetime.now().strftime("%Y-%m-%d %H:%M")
+                c.execute("INSERT INTO historial (planta_id, fecha, accion) VALUES (?, ?, ?)", 
+                          (p_id, fecha_hoy, "Nueva foto cargada al registro"))
+                conn.commit()
+                st.success(f"✅ Registro actualizado para la planta {p_id}")
     else:
-        st.warning("No hay plantas registradas.")
-
+        st.warning("Primero debes registrar una planta en el Panel de Control.")
 # --- SECCIÓN 4: BIBLIOTECA PDF ---
 elif choice == "Biblioteca PDF":
     st.header("📚 Mis Manuales Técnicos")
@@ -161,5 +176,6 @@ elif choice == "Biblioteca PDF":
         pdf_viewer = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700" type="application/pdf">'
 
         st.markdown(pdf_viewer, unsafe_allow_html=True)
+
 
 
