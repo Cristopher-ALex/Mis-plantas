@@ -3,6 +3,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import os
+import requests  # <--- ASEGÚRATE DE QUE ESTA LÍNEA ESTÉimport streamlit as st
 
 # --- CONFIGURACIÓN DE BASE DE DATOS ---
 conn = sqlite3.connect('mi_jardin.db', check_same_thread=False)
@@ -107,4 +108,5 @@ elif choice == "Cámara de Seguimiento":
                 st.success("¡Foto vinculada al historial!")
     else:
         st.warning("Primero registra una planta.")
+
 
