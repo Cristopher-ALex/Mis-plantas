@@ -20,7 +20,8 @@ c.execute('''CREATE TABLE IF NOT EXISTS historial
 conn.commit()
 
 # Insertar categorías base si la tabla está vacía
-categorias_base = ["Flores", "Plantas de Interior", "Plantas de Exterior", "Árboles", "Bonsái", "Carnívoras"]
+# Agregamos "Cactus" a la lista
+categorias_base = ["Cactus", "Flores", "Plantas de Interior", "Plantas de Exterior", "Árboles", "Bonsái", "Carnívoras"]
 
 # --- INTERFAZ ---
 st.set_page_config(page_title="Mi Jardín Pro", layout="wide")
@@ -161,5 +162,6 @@ elif choice == "Cámara/Fotos":
                 c.execute("INSERT INTO historial (planta_id, fecha, accion) VALUES (?, ?, ?)", (sel_id, fecha, "Foto subida"))
                 conn.commit()
                 st.success("Foto registrada en la bitácora.")
+
 
 
