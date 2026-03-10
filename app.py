@@ -6,7 +6,7 @@ import requests
 import os
 
 # --- CONFIGURACIÓN DE BASE DE DATOS ---
-conn = sqlite3.connect('mi_jardin.db', check_same_thread=False)
+conn = sqlite3.connect('mi_jardin_v2.db', check_same_thread=False)
 c = conn.cursor()
 
 # Tablas actualizadas con nuevos campos para riego, sustrato y notas
@@ -140,3 +140,4 @@ elif choice == "Cámara/Fotos":
                 c.execute("INSERT INTO historial (planta_id, fecha, accion) VALUES (?, ?, ?)", (sel_id, fecha, "Foto subida"))
                 conn.commit()
                 st.success("Foto registrada en la bitácora.")
+
