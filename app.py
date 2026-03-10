@@ -17,6 +17,19 @@ conn.commit()
 # --- INTERFAZ ---
 st.title("🌿 Mi Jardín en la Nube")
 
+# --- SECCIÓN DE CLIMA (COMODORO RIVADAVIA) ---
+try:
+    url_clima = "https://wttr.in/Comodoro+Rivadavia?format=%c+%t+%w"
+    respuesta = requests.get(url_clima)
+    if respuesta.status_code == 200:
+        st.info(f"📍 Clima actual en Comodoro: {respuesta.text}")
+    else:
+        st.write("🌤️ Clima de Comodoro no disponible")
+except:
+    st.write("🌤️ Conexión de clima lenta...")
+
+st.divider() # Una línea para separar el clima del resto
+
 menu = ["Inicio", "Registrar Planta", "Panel de Control", "Cámara de Seguimiento"]
 choice = st.sidebar.selectbox("Menú de Navegación", menu)
 
@@ -94,3 +107,4 @@ elif choice == "Cámara de Seguimiento":
                 st.success("¡Foto vinculada al historial!")
     else:
         st.warning("Primero registra una planta.")
+
