@@ -99,31 +99,52 @@ elif choice == "Panel de Control":
 elif choice == "Fichas Detalladas":
     st.header("📇 Ficha Técnica Individual")
     p_df = pd.read_sql("SELECT id, apodo FROM plantas", conn)
+    
     if not p_df.empty:
-        sel = st.selectbox("Elegir Planta", p_df['id'], format_func=lambda x: p_df[p_df['id']==x]['apodo'].values[0])
+        # Selector de planta
+        sel = st.selectbox("Elegir Planta", p_df['id'], 
+                           format_func=lambda x: p_df[p_df['id']==x]['apodo'].values[0])
         
+        # Traemos la info actual
         info = pd.read_sql(f'''SELECT p.*, e.nombre as esp, e.categoria as cat 
                                FROM plantas p JOIN especies e ON p.especie_id = e.id 
                                WHERE p.id = {sel}''', conn).iloc[0]
         
+        # Vista de la Ficha
         col1, col2 = st.columns(2)
         with col1:
             st.metric("Categoría", info['cat'])
             st.write(f"**Especie:** {info['esp']}")
             st.write(f"**Ubicación:** {info['ubicacion']}")
-            st.write(f"**Riego:** {info['riego']}")
         with col2:
-            st.write(f"**Sustrato:** {info['sustrato']}")
-            st.write(f"**Notas:** {info['notas']}")
-            
-        # Historial de fotos
+            st.write(f"**Riego:** {info['riego'] if info['riego'] else 'Sin dato'}")
+            st.write(f"**Sustrato:** {info['sustrato'] if info['sustrato'] else 'Sin dato'}")
+            st.write(f"**Notas:** {info['notas'] if info['notas'] else '-'}")
+
+        # --- SECCIÓN PARA EDITAR ---
         st.divider()
-        st.subheader("🕒 Historial y Fotos")
+        with st.expander("✏️ Editar información de esta ficha"):
+            with st.form("editar_ficha"):
+                nuevo_riego = st.text_input("Actualizar Riego", value=info['riego'] if info['riego'] else "")
+                nuevo_sustrato = st.text_input("Actualizar Sustrato", value=info['sustrato'] if info['sustrato'] else "")
+                nuevas_notas = st.text_area("Actualizar Notas", value=info['notas'] if info['notas'] else "")
+                nueva_ubi = st.selectbox("Cambiar Ubicación", ["Interior", "Exterior", "Invernadero", "Balcón"], 
+                                         index=["Interior", "Exterior", "Invernadero", "Balcón"].index(info['ubicacion']))
+                
+                if st.form_submit_button("Guardar Cambios"):
+                    c.execute('''UPDATE plantas 
+                                 SET riego = ?, sustrato = ?, notas = ?, ubicacion = ? 
+                                 WHERE id = ?''', 
+                              (nuevo_riego, nuevo_sustrato, nuevas_notas, nueva_ubi, sel))
+                    conn.commit()
+                    st.success("¡Ficha actualizada!")
+                    st.rerun() # Recarga para mostrar los datos nuevos arriba
+
+        # Historial de eventos
+        st.subheader("🕒 Eventos Recientes")
         hist = pd.read_sql(f"SELECT fecha, accion FROM historial WHERE planta_id = {sel} ORDER BY fecha DESC", conn)
         if not hist.empty:
             st.table(hist)
-        else:
-            st.write("Sin fotos o eventos registrados aún.")
     else:
         st.warning("Registra una planta primero.")
 
@@ -140,4 +161,5 @@ elif choice == "Cámara/Fotos":
                 c.execute("INSERT INTO historial (planta_id, fecha, accion) VALUES (?, ?, ?)", (sel_id, fecha, "Foto subida"))
                 conn.commit()
                 st.success("Foto registrada en la bitácora.")
+
 
