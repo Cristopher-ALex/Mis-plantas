@@ -10,9 +10,60 @@ st.set_page_config(page_title="Mi Jardín Permanente", layout="wide")
 # Esta conexión buscará tus credenciales en los "Secrets" de Streamlit
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Función para leer los datos actuales
+# --- FUNCIÓN DE LECTURA MEJORADA ---
 def leer_datos():
-    return conn.read(worksheet="plantas", ttl="0")
+    try:
+        # Forzamos la lectura de la hoja "plantas"
+        return conn.read(worksheet="plantas", ttl=0)
+    except Exception as e:
+        # Si la planilla está vacía o no se encuentra, creamos un DF básico
+        return pd.DataFrame(columns=["id", "apodo", "categoria", "especie", "ubicacion", "riego", "sustrato", "notas"])
+
+# --- SECCIÓN REGISTRAR NUEVA ---
+elif choice == "Registrar Nueva":
+    st.header("📝 Alta de Planta")
+    
+    # Movimos la lectura de datos adentro de un try para que no bloquee la app
+    try:
+        df_existente = leer_datos()
+    except:
+        df_existente = pd.DataFrame(columns=["id", "apodo", "categoria", "especie", "ubicacion", "riego", "sustrato", "notas"])
+
+    with st.form("form_alta", clear_on_submit=True):
+        apodo = st.text_input("Apodo de la planta")
+        cat = st.selectbox("Categoría", ["Cactus", "Flores", "Plantas de Interior", "Plantas de Exterior", "Árboles", "Bonsái", "Carnívoras"])
+        esp = st.text_input("Especie")
+        ubi = st.selectbox("Ubicación", ["Interior", "Exterior", "Invernadero", "Balcón"])
+        riego = st.text_input("Frecuencia de Riego")
+        sust = st.text_input("Sustrato")
+        notas = st.text_area("Notas")
+        
+        if st.form_submit_button("Guardar en Google Sheets"):
+            if apodo and esp:
+                try:
+                    # Crear nueva fila con datos limpios
+                    nueva_fila = {
+                        "id": int(len(df_existente) + 1),
+                        "apodo": str(apodo),
+                        "categoria": str(cat),
+                        "especie": str(esp),
+                        "ubicacion": str(ubi),
+                        "riego": str(riego),
+                        "sustrato": str(sust),
+                        "notas": str(notas)
+                    }
+                    
+                    # Agregar a los datos actuales
+                    df_actualizado = pd.concat([df_existente, pd.DataFrame([nueva_fila])], ignore_index=True)
+                    
+                    # Subir a Google
+                    conn.update(worksheet="plantas", data=df_actualizado)
+                    st.success(f"¡{apodo} guardada con éxito!")
+                    st.balloons()
+                except Exception as e:
+                    st.error(f"Error técnico al guardar: {e}")
+            else:
+                st.error("Por favor, completá Apodo y Especie.")
 
 # --- INTERFAZ Y CLIMA ---
 st.title("🌿 Gestión Botánica Permanente")
@@ -90,3 +141,4 @@ elif choice == "Fichas Detalladas":
             st.write(f"**Notas:** {info['notas']}")
     else:
         st.info("No hay plantas registradas en la planilla.")
+
