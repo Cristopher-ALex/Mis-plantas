@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 
 # --- CONFIGURACIÓN ---
-# PEGA AQUÍ EL LINK QUE COPIASTE EN "PUBLICAR EN LA WEB" (el que termina en .csv)
+# https://docs.google.com/spreadsheets/d/e/2PACX-1vQsVvVAuJQrO2jZdLLtBfXhrmqX0KAlwQh9Fazxd8wZydlyraBS_FqWYsm0WAHVd9CyXkPNTLsSmxk0/pub?output=csv" (el que termina en .csv)
 URL_CSV = "TU_LINK_DE_PUBLICAR_EN_LA_WEB_AQUÍ"
 
 st.set_page_config(page_title="Mi Jardín Permanente", layout="wide")
@@ -50,3 +50,4 @@ elif choice == "Registrar Nueva":
 elif choice == "Panel de Control":
     df = leer_datos()
     st.dataframe(df, use_container_width=True)
+
