@@ -74,7 +74,8 @@ except:
 with st.sidebar:
     st.header("Configuración")
     st.write("Para agregar plantas, editá tu planilla de Google.")
-    st.link_button("📂 Abrir mi Excel", "https://docs.google.com/spreadsheets/d/1A2B3C4D5E6F") # Cambia por tu link real de edición
+    # Reemplaza con el link de tu planilla (el que usás para editar)
+    st.link_button("📂 Abrir mi Excel", "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy5S2AYo5jWssqfdMA7tsLX7N2Ba6QdC-E2E_oHFYUnTBvzCEG6mryI1uVNLCDe-R44--dTvmrARqy/pubhtml")
     
     st.divider()
     # Clima rápido
@@ -83,3 +84,4 @@ with st.sidebar:
         st.metric("Clima Comodoro", res.text)
     except:
         pass
+
