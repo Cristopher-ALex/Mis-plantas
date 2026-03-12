@@ -4,7 +4,7 @@ import requests
 
 # --- CONFIGURACIÓN DE ENLACES ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy5S2AYo5jWssqfdMA7tsLX7N2Ba6QdC-E2E_oHFYUnTBvzCEG6mryI1uVNLCDe-R44--dTvmrARqy/pub?output=csv"
-LINK_DE_EDICION = https://docs.google.com/spreadsheets/d/13eofTb4yy_Mxzv6j_Sv949bpsUvIpb84cDiHqy-MYPw/edit?gid=0#gid=0"" 
+LINK_DE_EDICION = LINK_DE_EDICION = "https://docs.google.com/spreadsheets/d/13eofTb4yy_Mxzv6j_Sv949bpsUvIpb84cDiHqy-MYPw/edit?gid=0#gid=0" 
 
 st.set_page_config(page_title="Mi Jardín Botánico", page_icon="🌿", layout="centered")
 
@@ -89,3 +89,4 @@ with st.sidebar:
         st.metric("Clima actual", clima)
     except:
         pass
+
