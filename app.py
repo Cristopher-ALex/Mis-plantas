@@ -2,86 +2,111 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# Tu link seguro
+# --- CONFIGURACIÓN DE ENLACES ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy5S2AYo5jWssqfdMA7tsLX7N2Ba6QdC-E2E_oHFYUnTBvzCEG6mryI1uVNLCDe-R44--dTvmrARqy/pub?output=csv"
+# PEGA AQUÍ EL LINK QUE USAS PARA EDITAR TU EXCEL:
+LINK_DE_EDICION = "https://docs.google.com/spreadsheets/d/13eofTb4yy_Mxzv6j_Sv949bpsUvIpb84cDiHqy-MYPw/edit?gid=0#gid=0" 
 
 st.set_page_config(page_title="Mi Jardín Botánico", page_icon="🌿", layout="centered")
 
-# --- ESTILO PERSONALIZADO ---
+# --- ESTILO VISUAL ---
 st.markdown("""
     <style>
     .stApp { background-color: #f4f7f1; }
     .planta-card {
         background-color: white;
-        padding: 20px;
+        padding: 22px;
         border-radius: 15px;
-        border-left: 5px solid #2e7d32;
-        margin-bottom: 10px;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+        border-left: 6px solid #2e7d32;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
     .categoria-badge {
         background-color: #e8f5e9;
         color: #2e7d32;
-        padding: 4px 12px;
+        padding: 5px 14px;
         border-radius: 20px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # --- CABECERA ---
 st.title("🌿 Mi Inventario Botánico")
-st.caption("Gestión personalizada para mi colección en Comodoro")
+st.caption("Base de datos personalizada de mi colección")
 
+# --- CARGA Y PROCESAMIENTO ---
 try:
     df = pd.read_csv(URL_CSV)
-    df.columns = df.columns.str.strip().str.lower()
+    # Normalizar nombres de columnas
+    df.columns = [str(c).strip().lower() for c in df.columns]
+    
+    # Limpiar columnas automáticas de Google si existen
+    columnas_a_quitar = ['marca temporal', 'timestamp']
+    for col in columnas_a_quitar:
+        if col in df.columns:
+            df = df.drop(columns=[col])
 
     # --- BUSCADOR ---
-    busqueda = st.text_input("🔍 Buscar en mi jardín...", placeholder="Ej: Cactus, Jade, Interior...")
+    busqueda = st.text_input("🔍 Buscar en el jardín...", placeholder="Ej: Cactus, Interior, Jade...")
 
     if busqueda:
-        df = df[df.apply(lambda r: busqueda.lower() in r.astype(str).str.lower().values, axis=1)]
+        mask = df.apply(lambda r: busqueda.lower() in r.astype(str).str.lower().values, axis=1)
+        df_mostrar = df[mask]
+    else:
+        df_mostrar = df
 
-    # --- VISTA DE FICHAS (No tabla) ---
-    if not df.empty:
-        for i, row in df.iterrows():
+    # --- VISTA DE FICHAS ---
+    if not df_mostrar.empty:
+        for i, row in df_mostrar.iterrows():
             with st.container():
+                # Obtenemos datos con valores por defecto por si falta alguno
+                nombre = row.get('apodo', 'Sin nombre')
+                especie = row.get('especie', 'No especificada')
+                cat = row.get('categoria', 'General')
+                ubi = row.get('ubicacion', '-')
+                riego = row.get('riego', '-')
+                sust = row.get('sustrato', '-')
+                notas = row.get('notas', '')
+
                 st.markdown(f"""
                 <div class="planta-card">
-                    <span class="categoria-badge">{row.get('categoria', 'Sin Categoría').upper()}</span>
-                    <h3 style="margin-top:10px; color:#1b5e20;">🌵 {row.get('apodo', 'Sin nombre')}</h3>
-                    <p style="color:#555;"><b>Especie:</b> {row.get('especie', '-')}</p>
-                    <hr style="margin:10px 0; border:0.5px solid #eee;">
-                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                        <span>📍 {row.get('ubicacion', '-')}</span>
-                        <span>💧 {row.get('riego', '-')}</span>
-                        <span>🪴 {row.get('sustrato', '-')}</span>
+                    <span class="categoria-badge">{cat}</span>
+                    <h3 style="margin: 10px 0 5px 0; color:#1b5e20;">🌵 {nombre}</h3>
+                    <p style="color:#666; font-size: 14px; margin-bottom:15px;"><i>{especie}</i></p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-size: 13px; color: #444;">
+                        <div><b>📍 Ubicación</b><br>{ubi}</div>
+                        <div><b>💧 Riego</b><br>{riego}</div>
+                        <div><b>🪴 Sustrato</b><br>{sust}</div>
                     </div>
-                    <p style="margin-top:10px; font-size: 13px; font-style: italic; color: #777;">
-                        <b>Notas:</b> {row.get('notas', 'Sin anotaciones.')}
-                    </p>
+                    {f'<p style="margin-top:15px; padding-top:10px; border-top:1px solid #eee; font-size: 13px; color: #777;"><b>Notas:</b> {notas}</p>' if notas else ''}
                 </div>
                 """, unsafe_allow_html=True)
     else:
-        st.info("No se encontraron plantas. Agregá datos en tu Google Sheets para verlos aquí.")
+        st.info("No se encontraron resultados en la búsqueda.")
 
-except:
-    st.error("Esperando conexión con Google Sheets...")
+except Exception as e:
+    st.error("Conectando con la base de datos...")
+    st.caption("Asegúrate de que la primera fila del Excel tenga los títulos correctos.")
 
 # --- BARRA LATERAL ---
 with st.sidebar:
-    st.header("Configuración")
-    st.write("Para agregar plantas, editá tu planilla de Google.")
-    # Reemplaza con el link de tu planilla (el que usás para editar)
-    st.link_button("📂 Abrir mi Excel", "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy5S2AYo5jWssqfdMA7tsLX7N2Ba6QdC-E2E_oHFYUnTBvzCEG6mryI1uVNLCDe-R44--dTvmrARqy/pubhtml")
+    st.header("Opciones")
+    st.write("Gestiona tus plantas directamente en la planilla original.")
+    
+    # Botón para abrir el Excel real
+    st.link_button("📂 Editar mi Google Sheets", LINK_DE_EDICION)
     
     st.divider()
-    # Clima rápido
+    
+    # Clima local (Comodoro Rivadavia)
     try:
-        res = requests.get("https://wttr.in/Comodoro+Rivadavia?format=%c+%t", timeout=2)
-        st.metric("Clima Comodoro", res.text)
+        clima = requests.get("https://wttr.in/Comodoro+Rivadavia?format=%c+%t", timeout=2).text
+        st.metric("Clima actual", clima)
     except:
         pass
-
+    
+    st.caption("v2.0 - Interfaz Mejorada")
