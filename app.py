@@ -1,53 +1,30 @@
 import streamlit as st
 import pandas as pd
-import requests
 
-# --- CONFIGURACIÓN ---
-# https://docs.google.com/spreadsheets/d/e/2PACX-1vQsVvVAuJQrO2jZdLLtBfXhrmqX0KAlwQh9Fazxd8wZydlyraBS_FqWYsm0WAHVd9CyXkPNTLsSmxk0/pub?output=csv" (el que termina en .csv)
-URL_CSV = "TU_LINK_DE_PUBLICAR_EN_LA_WEB_AQUÍ"
+# PEGA TU LINK DE PUBLICAR EN LA WEB AQUÍ
+URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy5S2AYo5jWssqfdMA7tsLX7N2Ba6QdC-E2E_oHFYUnTBvzCEG6mryI1uVNLCDe-R44--dTvmrARqy/pub?output=csv"
 
-st.set_page_config(page_title="Mi Jardín Permanente", layout="wide")
+st.set_page_config(page_title="Mi Jardín", page_icon="🌵")
 
-def leer_datos():
-    try:
-        # Leemos el CSV directamente de la web
-        return pd.read_csv(URL_CSV)
-    except:
-        return pd.DataFrame(columns=["id", "apodo", "categoria", "especie", "ubicacion", "riego", "sustrato", "notas"])
+st.title("🌵 Mi Colección de Plantas")
 
-# --- CLIMA ---
 try:
-    url_clima = "https://wttr.in/Comodoro+Rivadavia?format=%c+%t+%w"
-    res = requests.get(url_clima, timeout=5)
-    if res.status_code == 200:
-        st.info(f"📍 Clima en Comodoro: {res.text}")
-except:
-    pass
+    # Leemos los datos
+    df = pd.read_csv(URL_CSV)
+    
+    # Buscador
+    buscar = st.text_input("🔍 Buscar planta...")
+    if buscar:
+        df = df[df.apply(lambda r: buscar.lower() in r.astype(str).str.lower().values, axis=1)]
 
-st.title("🌿 Gestión Botánica")
-
-menu = ["Inicio", "Registrar Nueva", "Panel de Control"]
-choice = st.sidebar.selectbox("Menú", menu)
-
-if choice == "Inicio":
-    st.write("Bienvenido. Tus datos se sincronizan con Google Sheets.")
-
-elif choice == "Registrar Nueva":
-    st.header("📝 Alta de Planta")
-    with st.form("form_alta"):
-        apodo = st.text_input("Apodo")
-        cat = st.selectbox("Categoría", ["Cactus", "Flores", "Interior", "Exterior", "Árboles", "Bonsái", "Carnívoras"])
-        esp = st.text_input("Especie")
-        ubi = st.selectbox("Ubicación", ["Interior", "Exterior", "Invernadero", "Balcón"])
-        riego = st.text_input("Riego")
-        sust = st.text_input("Sustrato")
-        notas = st.text_area("Notas")
-        
-        if st.form_submit_button("Guardar"):
-            st.info("Para guardar datos permanentes, usaremos el formulario de Google Forms.")
-            st.write("⚠️ Para evitar errores técnicos, te recomiendo usar un Google Form conectado a tu planilla.")
-
-elif choice == "Panel de Control":
-    df = leer_datos()
+    # Mostramos la tabla
     st.dataframe(df, use_container_width=True)
+    
+    st.success(f"Se encontraron {len(df)} plantas.")
 
+except Exception as e:
+    st.error("Conectando con la base de datos...")
+    st.info("Asegurate de haber pegado el link de 'Publicar en la web' en el código.")
+
+st.divider()
+st.write("📢 **Para agregar plantas:** Editá directamente tu archivo de Google Sheets y los cambios aparecerán aquí al refrescar.")
