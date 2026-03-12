@@ -78,14 +78,27 @@ try:
 
 except Exception as e:
     st.error(f"Error al cargar los datos: {e}")
-
+# --- BARRA LATERAL ---
 with st.sidebar:
     st.header("Opciones")
+    st.write("Gestiona tus plantas directamente en la planilla original.")
+    
+    # Botón para abrir el Excel real
     st.link_button("📂 Editar mi Google Sheets", LINK_DE_EDICION)
+    
     st.divider()
+    
+    # Clima local (Comodoro Rivadavia) en Celsius y con Viento
     try:
-        clima = requests.get("https://wttr.in/Comodoro+Rivadavia?format=%c+%t", timeout=2).text
-        st.sidebar.metric("Clima Comodoro", clima)
+        # El parámetro m=metric asegura los °C y km/h
+        res = requests.get("https://wttr.in/Comodoro+Rivadavia?format=%c+%t+%w&m", timeout=3)
+        if res.status_code == 200:
+            st.metric("Clima en Comodoro", res.text)
+            st.caption("Datos: icono, temp y viento")
     except:
-        pass
+        st.write("Clima no disponible")
+    
+    st.divider()
+    st.caption("v2.1 - Sistema Métrico")
+
 
